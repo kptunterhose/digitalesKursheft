@@ -8,14 +8,17 @@ from screeninfo import get_monitors
 
 import os
 import json
+import datetime
+import pickle
 #from collections import namedtuple #für named tuple nt = namedtuble('bla', 'bla bla bla')
 
 
 RAEUME = ['54', '48', '49a', 'A', 'C', 'D']
 STATI = {
-    'Klasse erstellen': 0,
-    'Klasse bearbeiten': 1,
-    'SuS bearbeiten': 2
+    'neutral': 0,
+    'Klasse erstellen': 1,
+    'Klasse bearbeiten': 2,
+    'SuS bearbeiten': 3
 }
 STATUS = 0
 AKTIVESUS = set()
@@ -126,33 +129,38 @@ class VirtuellerKlassenraum(object):
                       + '+' + str(xpos_fenster) + '+' + str(ypos_fenster)
         self.fenster.geometry(geo_fenster)  # breitexhöhe+y-offset+x-offset
 
-        self.klasseLaden = Button(self.fenster, text='Klasse laden')
+        self.klasseLaden = Button(self.fenster, text='Klasse laden', command=self.ladeKlasse)
         self.klasseLaden.place(x=700, y=10, width=120)
-        self.speichern = Button(self.fenster, text='speichern')
+        self.speichern = Button(self.fenster, text='speichern', command=self.speicherKlasse)
         self.speichern.place(x=700, y=50, width=120)
-        self.neueKlasse = Button(self.fenster, text='neue Klasse')
+        self.neueKlasse = Button(self.fenster, text='neue Klasse', command=self.neueKlasseErstellen)
         self.neueKlasse.place(x=700, y= 90, width=120)
         self.thema = Label(self.fenster, text='Thema der Stunde')
         self.thema.place(x=700, y=140, width=120)
         self.benutzer = Entry(self.fenster)  # Kaffeetasse show=u'\u2615'
         # self.passwort = Entry(self.fenster)  # Atom show=u'\u269B'
         self.benutzer.place(x=700, y=170, width=120)
-        self.mitarbeitGut = Button(self.fenster, text='+')
+        self.mitarbeitGut = Button(self.fenster, text='+', command=self.bewertenPlus)
         self.mitarbeitGut.place(x=700, y=210, width=30)
-        self.mitarbeitGut['state'] = tkinter.DISABLED
-        self.mitarbeitMittel = Button(self.fenster, text='o')
+        #self.mitarbeitGut['state'] = tkinter.DISABLED
+        self.mitarbeitMittel = Button(self.fenster, text='o', command=self.bewertenKreis)
         self.mitarbeitMittel.place(x=740, y=210, width=30)
-        self.mitarbeitMittel['state'] = tkinter.DISABLED
-        self.mitarbeitSchlecht = Button(self.fenster, text='-')
+        #self.mitarbeitMittel['state'] = tkinter.DISABLED
+        self.mitarbeitSchlecht = Button(self.fenster, text='-', command=self.bewertenMinus)
         self.mitarbeitSchlecht.place(x=780, y=210, width=30)
-        self.mitarbeitSchlecht['state'] = tkinter.DISABLED
+        #self.mitarbeitSchlecht['state'] = tkinter.DISABLED
         #sus einlesen
-        all = {}
+        self.all = {}
         id = 0
         for i in range(1, 5):
             for j in range(1, 9):
                 id += 1
-                all[id] = SuS(name=str(id), stufe='8', raum='54', pos=(i, j), fenster=self.fenster)
+                self.all[id] = SuS(id=id,
+                                        name=str(id),
+                                        stufe='8',
+                                        raum='54',
+                                        pos=(i, j),
+                                        fenster=self.fenster)
 
     def bewerten(self, n):
         print(n)
@@ -160,11 +168,63 @@ class VirtuellerKlassenraum(object):
         self.mitarbeitMittel['state'] = tkinter.NORMAL
         self.mitarbeitSchlecht['state'] = tkinter.NORMAL
 
-    def ladeKlasse(self):
-        pass
+    def bewertenPlus(self):
+        global AKTIVESUS
+        for id in AKTIVESUS:
+            self.all[id].benoten(1)
+            nameTemp = self.all[id].name + ' +'
+            self.all[id].button.configure(text=nameTemp, bg='green')
+            self.all[id].isActive = not self.all[id].isActive
+        AKTIVESUS.clear()
+        print(AKTIVESUS)
+    def bewertenKreis(self):
+        global AKTIVESUS
+        for id in AKTIVESUS:
+            self.all[id].benoten(0)
+            nameTemp = self.all[id].name + ' o'
+            self.all[id].button.configure(text=nameTemp, bg='orange')
+            self.all[id].isActive = not self.all[id].isActive
+        AKTIVESUS.clear()
+        print(AKTIVESUS)
 
-    def neueKlasse(self):
-        pass
+    def bewertenMinus(self):
+        global AKTIVESUS
+        for id in AKTIVESUS:
+            self.all[id].benoten(-1)
+            nameTemp = self.all[id].name + ' -'
+            self.all[id].button.configure(text=nameTemp, bg='red')
+            self.all[id].isActive = not self.all[id].isActive
+        AKTIVESUS.clear()
+        print(AKTIVESUS)
+
+    def ladeKlasse(self):
+        dictTemp = dict()
+        with open('data.json', 'r') as f:
+            dictTemp = json.load(f)
+        print(dictTemp)
+
+    def neueKlasseErstellen(self):
+        global STATUS
+        if STATUS != STATI['Klasse erstellen']:
+            STATUS = STATI['Klasse erstellen']
+            self.neueKlasse.configure(text='Erstellen Beenden')
+            self.fenster.title('Klasse erstellen')
+        else:
+            STATUS = STATI['neutral']
+            self.neueKlasse.configure(text='neue Klasse')
+            self.fenster.title('Klasse XYZ')
+
+    def speicherKlasse(self):
+        dictToSave = dict()
+        dictToSave[0] = {
+            'Klasse': '8A',
+            'Raum': '54'
+        }
+        for id in self.all:
+            dictTemp = copy.copy(self.all[id].makeDictForSave())
+            dictToSave[id] = dictTemp
+        with open('data.json', 'w') as f:
+            json.dump(dictToSave, f, indent=2)
 
 
 class SuS(object):
@@ -176,10 +236,13 @@ class SuS(object):
     stufe = 0 # 5-13 (11=EF; 12=Q1; 13=Q2)
     muendlichBool = False
     isActive = False
+    dictForSave = dict()
+    benotungsDict = dict()
 
-    def __init__(self, name, stufe, raum, pos, muendlichBool=True, bild='', fenster=''):
+    def __init__(self, id, name, stufe, raum, pos, muendlichBool=True, bild='', fenster=''):
         # stufe: 5 bis 13
         # bild: Pfad zur Datei
+        self.id = id
         self.name = name
         self.stufe = stufe
         self.raum = raum
@@ -195,21 +258,24 @@ class SuS(object):
 
     def doStuff(self):
         global AKTIVESUS, GESAMTNAME
-        self.isActive = not (self.isActive)
+        self.isActive = not self.isActive
         if self.isActive:
             self.button.configure(bg='yellow')
-            AKTIVESUS.add(self.name)
+            AKTIVESUS.add(self.id)
             if STATUS == STATI['Klasse erstellen']:
                 test = getNameForPlace(self.fenster)
                 test.okayButton.wait_window(test.popUp)
                 anzeigeName = GESAMTNAME
                 self.button.configure(text=anzeigeName)
-                AKTIVESUS.remove(self.name)
+                AKTIVESUS.remove(self.id)
+                self.isActive = not self.isActive
+                self.name = anzeigeName
                 self.button.configure(bg='SystemButtonFace')
+            elif STATUS == STATI['neutral']:
+                pass
         else:
             self.button.configure(bg='SystemButtonFace')
-            AKTIVESUS.remove(self.name)
-        print(AKTIVESUS)
+            AKTIVESUS.remove(self.id)
 
     def umsetzten(self, posNeu):
         pass
@@ -220,6 +286,20 @@ class SuS(object):
     def addBild(self, bild):
         pass
 
+    def makeDictForSave(self):
+        self.dictForSave['Name'] = self.name
+        self.dictForSave['Stufe'] = self.stufe
+        self.dictForSave['Raum'] = self.raum
+        self.dictForSave['Platz'] = self.platz
+        self.dictForSave['MuendlichBool'] = self.muendlichBool
+        self.dictForSave['Bild'] = self.bild
+        self.dictForSave['Benotung'] = self.benotungsDict
+        return self.dictForSave
+
+    def benoten(self, note, gewichtung=1, kommentar=''):
+        tag = str(datetime.datetime.now().date())
+        self.benotungsDict[tag] = (note, gewichtung, kommentar)
+        pass
 
 
 if __name__ == '__main__':
