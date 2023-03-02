@@ -9,11 +9,38 @@ from screeninfo import get_monitors
 import os
 import json
 import datetime
-import pickle
 #from collections import namedtuple #für named tuple nt = namedtuble('bla', 'bla bla bla')
 
-
+B = 60  # Bild/Button-Breite
+H = 90  # Bild/Button-Höhe
 RAEUME = ['54', '48', '49a', 'A', 'C', 'D']
+
+TISCHE = {
+    '54': {  # Physikraum 54
+        1: (10, 10),  # hinten links
+        2: (int(2 * (B + 10) + 1 * 40), 10),  # hinten rechts
+        3: (int(4 * (B + 10) + 2 * 40), 10),  # vorne links
+        4: (int(6 * (B + 10) + 3 * 40), 10),  # vorne rechts
+    },
+    '49a': {  # Chemieraum 49a
+        1: (10, 10),                                            # hinten links
+        2: (int(4 * (B + 10) + 2 * 40), 10),                    # hinten rechts
+        3: (int(2 * (B + 10) + 40), int(10 + 2 * (H + 10))),    # vorne links
+        4: (int(6 * (B + 10) + 3 * 40), int(10 + 2 * (H + 10))) # vorne rechts
+    }
+}
+PLATZ = {
+    '8': {
+        1: (int(0 * (B + 10)), int(0 * (H + 10))),
+        2: (int(1 * (B + 10)), int(0 * (H + 10))),
+        3: (int(0 * (B + 10)), int(1 * (H + 10))),
+        4: (int(1 * (B + 10)), int(1 * (H + 10))),
+        5: (int(0 * (B + 10)), int(2 * (H + 10))),
+        6: (int(1 * (B + 10)), int(2 * (H + 10))),
+        7: (int(0 * (B + 10)), int(3 * (H + 10))),
+        8: (int(1 * (B + 10)), int(3 * (H + 10)))
+    }
+}
 STATI = {
     'neutral': 0,
     'Klasse erstellen': 1,
@@ -45,7 +72,7 @@ class getNameForPlace(object):
         self.abbrechenButton.grid(row=2, column=1)
         self.popUp.bind('<Return>', self.returnNameForPlace)
 
-    def returnNameForPlace(self,event=None):
+    def returnNameForPlace(self, event=None):
         global GESAMTNAME
         GESAMTNAME = ''
         self.nameDict['vorname'] = self.vorname.get()
@@ -55,33 +82,15 @@ class getNameForPlace(object):
         pass
 
 
-def getPos(t, bild=(60, 90)):
-    b = bild[0]
-    h = bild[1]
-    Tisch = {
-        1: (10, 10),                                 # hinten links
-        2: (int(4 * (b + 10) + 40), 10),             # hinten rechts
-        3: (10, int(60 + 3 * h)),                    # vorne links
-        4: (int(4 * (b + 10) + 40), int(60 + 3 * h)) # vorne rechts
-    }
-    Platz = {
-        1: (0, 0),
-        2: (int(b + 10), 0),
-        3: (int(2 * (b + 10)), 0),
-        4: (int(3 * (b + 10)), 0),
-        5: (int(1 * (b + 10)), int(h + 10)),
-        6: (int(2 * (b + 10)), int(h + 10)),
-        7: (int(1 * (b + 10)), int(2 * (h + 10))),
-        8: (int(2 * (b + 10)), int(2 * (h + 10)))
-    }
+def getPos(t, raum='54', anordnung='8'):
     try:
         tisch = t[0]
         platz = t[1]
     except IndexError as e:
         print(e)
         print('Falsche Positions Angabe')
-    x = Tisch[tisch][0] + Platz[platz][0]
-    y = Tisch[tisch][1] + Platz[platz][1]
+    x = TISCHE[raum][tisch][0] + PLATZ[anordnung][platz][0]
+    y = TISCHE[raum][tisch][1] + PLATZ[anordnung][platz][1]
     return (x, y)
 
 
@@ -176,7 +185,7 @@ class VirtuellerKlassenraum(object):
             self.all[id].button.configure(text=nameTemp, bg='green')
             self.all[id].isActive = not self.all[id].isActive
         AKTIVESUS.clear()
-        print(AKTIVESUS)
+
     def bewertenKreis(self):
         global AKTIVESUS
         for id in AKTIVESUS:
@@ -185,7 +194,6 @@ class VirtuellerKlassenraum(object):
             self.all[id].button.configure(text=nameTemp, bg='orange')
             self.all[id].isActive = not self.all[id].isActive
         AKTIVESUS.clear()
-        print(AKTIVESUS)
 
     def bewertenMinus(self):
         global AKTIVESUS
@@ -195,7 +203,6 @@ class VirtuellerKlassenraum(object):
             self.all[id].button.configure(text=nameTemp, bg='red')
             self.all[id].isActive = not self.all[id].isActive
         AKTIVESUS.clear()
-        print(AKTIVESUS)
 
     def ladeKlasse(self):
         dictTemp = dict()
