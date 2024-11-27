@@ -8,11 +8,11 @@ from tkinter import filedialog
 from tkcalendar import Calendar
 from screeninfo import get_monitors
 #from Lernender import SuS
-import os
+import sys
 import json
 import datetime
 #from collections import namedtuple #für named tuple nt = namedtuble('bla', 'bla bla bla')
-SPEICHERNAME = '24-25_1.quartal'
+
 B = 63  # Bild/Button-Breite
 H = 66  # Bild/Button-Höhe
 RAEUME = ['134', '54', '48', '49a', 'A', 'B', 'D', 'ABD']
@@ -701,7 +701,10 @@ class SuS(object):
 
 
 if __name__ == '__main__':
-    fileName = 'D:/03_Noten/' + SPEICHERNAME
-    vk = VirtuellerKlassenraum(kursDatei=fileName)
-    #vk = VirtuellerKlassenraum()
-    vk.fenster.mainloop()
+    if len(sys.argv) == 2:
+        fileName = str(sys.argv[1])
+        vk = VirtuellerKlassenraum(kursDatei=fileName)
+        #vk = VirtuellerKlassenraum()
+        vk.fenster.mainloop()
+    else:
+        print('keine Inputdatei')
