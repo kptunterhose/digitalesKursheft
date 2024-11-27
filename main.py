@@ -708,3 +708,6 @@ if __name__ == '__main__':
         vk.fenster.mainloop()
     else:
         print('keine Inputdatei')
+        print('nutze:')
+        print('python main.py speicherort')
+        exit(1)

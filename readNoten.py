@@ -1,9 +1,14 @@
 import os
 import json
+import sys
 
-pfad = ('D:/03_Noten/24-25_1.quartal')
-
-#pfad = ('D:/03_Noten/23-24/Unterricht/alle-klassen-alles-23-24')
+if len(sys.argv) == 2:
+    pfad = sys.argv[1]
+else:
+    print('keine Notendatei')
+    print('nutze:')
+    print('python readNoten.py speicherort')
+    exit(1)
 
 with open(pfad, 'r') as f:
     klassenDatei = json.load(f)
