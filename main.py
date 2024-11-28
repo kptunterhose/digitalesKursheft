@@ -12,7 +12,10 @@ import sys
 import json
 import datetime
 #from collections import namedtuple #für named tuple nt = namedtuble('bla', 'bla bla bla')
-
+try:
+    SPEICHERNAME = sys.argv[1]
+except:
+    pass
 B = 63  # Bild/Button-Breite
 H = 66  # Bild/Button-Höhe
 RAEUME = ['134', '54', '48', '49a', 'A', 'B', 'D', 'ABD']
@@ -538,6 +541,7 @@ class VirtuellerKlassenraum(object):
                 self.klasseAuswaehlen['menu'].add_command(label=key, command=lambda value=key: self.ausgewaehlterKurs.set(value))
 
     def speicherKlasse(self):
+        global SPEICHERNAME
         fileDir = 'D:/03_Noten/'
         dictToSave = dict()
         kursName = self.kurs + '-' + self.fach + '-' + self.raum
@@ -552,7 +556,7 @@ class VirtuellerKlassenraum(object):
             dictToSave[id] = dictTemp
         if ALLDATAINONE:
             self.klassenDatei[kursName] = dictToSave
-            with open(fileDir + SPEICHERNAME, 'w') as f:
+            with open(SPEICHERNAME, 'w') as f:
                 json.dump(self.klassenDatei, f, indent=2)
         else:
             filename = self.kurs + '-' + self.fach
@@ -701,9 +705,10 @@ class SuS(object):
 
 
 if __name__ == '__main__':
+    SPEICHERNAME
     if len(sys.argv) == 2:
-        fileName = str(sys.argv[1])
-        vk = VirtuellerKlassenraum(kursDatei=fileName)
+        SPEICHERNAME = str(sys.argv[1])
+        vk = VirtuellerKlassenraum(kursDatei=SPEICHERNAME)
         #vk = VirtuellerKlassenraum()
         vk.fenster.mainloop()
     else:
